@@ -98,3 +98,70 @@ private:
 	std::vector<action::place> space;
 	board::piece_type who;
 };
+
+struct node{
+	int total = 0;
+	int win = 0;
+	node* parent = NULL;
+	std::vector<node*> children;
+	board state;
+};
+
+class MCTS_player : public random_agent {
+public:
+	MCTS_player(const std::string& args = "") : random_agent("name=random role=unknown " + args),
+		space(board::size_x * board::size_y), who(board::empty) ,root(new node){
+		if (name().find_first_of("[]():; ") != std::string::npos)
+			throw std::invalid_argument("invalid name: " + name());
+		if (role() == "black") who = board::black;
+		if (role() == "white") who = board::white;
+		if (who == board::empty)
+			throw std::invalid_argument("invalid role: " + role());
+		for (size_t i = 0; i < space.size(); i++)
+			space[i] = action::place(i, who);
+	}
+
+	float UCT(node* cur){
+		float win_rate = (float) cur->win / (float) cur->total;
+		const float c = 0.5;
+		float exploitation = sqrt(log(cur->parent->total) / cur->total);
+		float uct = win_rate + c * exploitation;
+
+		return uct; 
+	}
+
+	node* select(){
+		node* cur = root;
+		while(cur->children.size() != 0){
+			float best_uct = -1;
+			node* best_child = NULL;
+
+			for(node* child : cur->children){
+				float uct = UCT(child);
+				if(uct > best_uct){
+					uct = best_uct;
+					best_child = child;
+				}
+			}
+
+			cur = best_child;
+		}
+
+		return cur;
+	}
+
+	virtual action take_action(const board& state) {
+		std::shuffle(space.begin(), space.end(), engine);
+		for (const action::place& move : space) {
+			board after = state;
+			if (move.apply(after) == board::legal)
+				return move;
+		}
+		return action();
+	}
+
+private:
+	std::vector<action::place> space;
+	board::piece_type who;
+	node* root;
+};
