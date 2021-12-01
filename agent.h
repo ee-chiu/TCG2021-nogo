@@ -150,6 +150,21 @@ public:
 		return cur;
 	}
 
+	void expand() {
+		node* cur = select();
+
+		for (const action::place& move : space) {
+			board after = cur->state;
+			if (move.apply(after) == board::legal){
+				node* child = new node;
+				child->state = after;
+				cur->children.push_back(child);
+			}
+		}
+
+		return;
+	}
+
 	virtual action take_action(const board& state) {
 		std::shuffle(space.begin(), space.end(), engine);
 		for (const action::place& move : space) {
