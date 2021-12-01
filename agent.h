@@ -17,6 +17,8 @@
 #include "board.h"
 #include "action.h"
 #include <fstream>
+#include <cstdlib>
+#include <ctime>
 
 class agent {
 public:
@@ -150,19 +152,32 @@ public:
 		return cur;
 	}
 
-	void expand() {
-		node* cur = select();
-
+	void expand(node* leaf) {
 		for (const action::place& move : space) {
-			board after = cur->state;
+			board after = leaf->state;
 			if (move.apply(after) == board::legal){
 				node* child = new node;
 				child->state = after;
-				cur->children.push_back(child);
+				leaf->children.push_back(child);
 			}
 		}
 
 		return;
+	}
+
+	node* random_child(node* leaf){
+		srand(time(NULL));
+		int size = leaf->children.size();
+		int i = rand() % size;
+		node* child = leaf->children[i];
+		
+		return child;
+	}
+	
+	void mcts(){
+		node* leaf = select();
+		expand(leaf);
+		node* child = random_child(leaf);
 	}
 
 	virtual action take_action(const board& state) {
