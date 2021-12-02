@@ -239,11 +239,24 @@ public:
 		else return 0;
 	}
 
+	void backpropagate(node* child, int result){
+		node* cur = child;
+
+		while(cur != root){
+			cur->total++;
+			cur->win += result;
+			cur = cur->parent;
+		}
+
+		return;
+	}
+
 	void mcts(){
 		node* leaf = select();
 		expand(leaf);
 		node* child = random_child(leaf);
 		int result = simulation(child);
+		backpropagate(child, result);
 	}
 
 	virtual action take_action(const board& state) {
