@@ -121,6 +121,8 @@ public:
 			throw std::invalid_argument("invalid role: " + role());
 		for (size_t i = 0; i < space.size(); i++)
 			space[i] = action::place(i, who);
+
+		who_cpy = who;
 	}
 
 	float UCT(node* cur){
@@ -132,8 +134,17 @@ public:
 		return uct; 
 	}
 
+	void change_player() {
+		if(who == board::black) who = board::white;
+		else if(who == board::white) who = board::black;
+		
+		return;
+	}
+
 	node* select(){
 		node* cur = root;
+		who = who_cpy;
+
 		while(cur->children.size() != 0){
 			float best_uct = -1;
 			node* best_child = NULL;
@@ -147,11 +158,12 @@ public:
 			}
 
 			cur = best_child;
+			change_player();
 		}
 
 		return cur;
 	}
-
+	
 	void expand(node* leaf) {
 		for (const action::place& move : space) {
 			board after = leaf->state;
@@ -173,11 +185,55 @@ public:
 		
 		return child;
 	}
-	
+
+	bool is_terminal(const board& cur_state) {
+		int legal_count = 0;
+		
+		for (const action::place& move : space) {
+			board after = cur_state;
+			if (move.apply(after) == board::legal) legal_count++;
+		}
+
+		if(legal_count == 0) return true;
+
+		change_player();
+		legal_count = 0;
+
+		for (const action::place& move : space) {
+			board after = cur_state;
+			if (move.apply(after) == board::legal) legal_count++;
+		}
+
+		change_player();
+		if(legal_count == 0) return true;
+		
+		return false;
+	}
+
+	int simulation(node* child) {
+		board cur_state = child->state;
+
+		while(!is_terminal(cur_state)){
+			change_player();
+
+			std::shuffle(space.begin(), space.end(), engine);
+			for (const action::place& move : space) {
+				board after = cur_state;
+				if (move.apply(after) == board::legal){
+					cur_state = after;
+					break;
+				}
+			}
+		}
+		
+		
+	}
+
 	void mcts(){
 		node* leaf = select();
 		expand(leaf);
 		node* child = random_child(leaf);
+		int result = simulation(child);
 	}
 
 	virtual action take_action(const board& state) {
@@ -193,5 +249,6 @@ public:
 private:
 	std::vector<action::place> space;
 	board::piece_type who;
+	board::piece_type who_cpy;
 	node* root;
 };
