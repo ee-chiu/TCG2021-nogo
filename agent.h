@@ -107,12 +107,13 @@ struct node{
 	node* parent = NULL;
 	std::vector<node*> children;
 	board state;
+	action move;
 };
 
 class MCTS_player : public random_agent {
 public:
 	MCTS_player(const std::string& args = "") : random_agent("name=random role=unknown " + args),
-		space(board::size_x * board::size_y), who(board::empty) ,root(new node){
+		space(board::size_x * board::size_y), who(board::empty) ,root(NULL){
 		if (name().find_first_of("[]():; ") != std::string::npos)
 			throw std::invalid_argument("invalid name: " + name());
 		if (role() == "black") who = board::black;
@@ -171,6 +172,8 @@ public:
 				node* child = new node;
 				child->state = after;
 				leaf->children.push_back(child);
+				child->parent = leaf;
+				child->move = move;
 			}
 		}
 
@@ -252,21 +255,43 @@ public:
 	}
 
 	void mcts(){
-		node* leaf = select();
-		expand(leaf);
-		node* child = random_child(leaf);
-		int result = simulation(child);
-		backpropagate(child, result);
+		const int simulation_count = 100;
+		
+		for(int i = 1 ; i <= simulation_count ; i++){
+			node* leaf = select();
+			expand(leaf);
+			node* child = random_child(leaf);
+			int result = simulation(child);
+			backpropagate(child, result);
+		}
+
+		return;
 	}
 
 	virtual action take_action(const board& state) {
-		std::shuffle(space.begin(), space.end(), engine);
+		root = new node;
+		root->state = state;
+		mcts();
+
+		action best_move = action();
+		float best_uct = -1;
+		for(node* child : root->children){
+			float uct = UCT(child);
+
+			if(uct > best_uct){
+				best_uct = uct;
+				best_move = child->move;
+			}
+		}
+
+		return best_move;
+		/*std::shuffle(space.begin(), space.end(), engine);
 		for (const action::place& move : space) {
 			board after = state;
 			if (move.apply(after) == board::legal)
 				return move;
 		}
-		return action();
+		return action();*/
 	}
 
 private:
@@ -275,4 +300,5 @@ private:
 	board::piece_type who_cpy;
 	board::piece_type winner;
 	node* root;
+	node* action_node;
 };
