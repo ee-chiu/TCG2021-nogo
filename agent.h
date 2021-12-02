@@ -194,7 +194,11 @@ public:
 			if (move.apply(after) == board::legal) legal_count++;
 		}
 
-		if(legal_count == 0) return true;
+		if(legal_count == 0) { //我沒有 legal action 了
+			if(who == board::black) winner = board::white;
+			else if(who == board::white) winner = board::black;
+			return true;
+		}
 
 		change_player();
 		legal_count = 0;
@@ -205,7 +209,11 @@ public:
 		}
 
 		change_player();
-		if(legal_count == 0) return true;
+		if(legal_count == 0) { // 對方沒有 legal action 了
+			if(who == board::black) winner = board::black;
+			else if(who == board::white) winner = board::white;
+			return true;
+		}
 		
 		return false;
 	}
@@ -226,7 +234,9 @@ public:
 			}
 		}
 		
-		
+		who = who_cpy;
+		if(winner == who) return 1;
+		else return 0;
 	}
 
 	void mcts(){
@@ -250,5 +260,6 @@ private:
 	std::vector<action::place> space;
 	board::piece_type who;
 	board::piece_type who_cpy;
+	board::piece_type winner;
 	node* root;
 };
