@@ -180,6 +180,11 @@ public:
 				leaf->children.push_back(child);
 				child->parent = leaf;
 				child->move = move;
+
+				for(int i = 1 ; i <= 100 ; i++){
+					int result = simulation(child);
+					backpropagate(child, result);
+				}
 			}
 		}
 
@@ -254,18 +259,29 @@ public:
 			cur = cur->parent;
 		}
 
+		root->total++;
+		root->win += result;
+
 		return;
 	}
 
 	void mcts(){
 		const int simulation_count = 100;
-		
+
 		for(int i = 1 ; i <= simulation_count ; i++){
 			node* leaf = select();
 			expand(leaf);
-			node* child = random_child(leaf);
-			int result = simulation(child);
-			backpropagate(child, result);
+			
+			if(leaf->children.size() == 0){
+				int result = simulation(leaf);
+				backpropagate(leaf, result);
+			}
+
+			else{
+				node* child = random_child(leaf);
+				int result = simulation(child);
+				backpropagate(child, result);
+			}
 		}
 
 		return;
