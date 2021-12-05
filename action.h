@@ -71,6 +71,7 @@ public:
 	board::piece_type color() const { return static_cast<board::piece_type>(event() >> 16); }
 public:
 	board::reward apply(board& b) const { return b.place(position(), color()); }
+	board::reward apply(board& b, board::piece_type who) const { return b.place(position(), who); }
 	std::ostream& operator >>(std::ostream& out) const {
 		return out << ';' << "?BW?"[color() & 0b11] << '[' << char('a' + position().x)
 		           << char('a' + ((board::size_y - 1) - position().y)) << ']';

@@ -147,10 +147,16 @@ public:
 		who = who_cpy;
 
 		while(cur->children.size() != 0){
+			std::shuffle(cur->children.begin(), cur->children.end(), engine);
 			float best_uct = -1;
 			node* best_child = NULL;
 
 			for(node* child : cur->children){
+				if(child->total == 0){
+					best_child = child;
+					break;
+				}
+
 				float uct = UCT(child);
 				if(uct > best_uct){
 					uct = best_uct;
@@ -168,7 +174,7 @@ public:
 	void expand(node* leaf) {
 		for (const action::place& move : space) {
 			board after = leaf->state;
-			if (move.apply(after) == board::legal){
+			if (move.apply(after, who) == board::legal){
 				node* child = new node;
 				child->state = after;
 				leaf->children.push_back(child);
@@ -181,11 +187,8 @@ public:
 	}
 
 	node* random_child(node* leaf){
-		srand(time(NULL));
-		int size = leaf->children.size();
-		int i = rand() % size;
-		node* child = leaf->children[i];
-		
+		std::shuffle(leaf->children.begin(), leaf->children.end(), engine);
+		node* child = leaf->children[0];		
 		return child;
 	}
 
