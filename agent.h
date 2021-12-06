@@ -129,7 +129,7 @@ public:
 	float UCT(node* cur){
 		float win_rate = (float) cur->win / (float) cur->total;
 		const float c = 0.5;
-		float exploitation = sqrt(log(cur->parent->total) / cur->total);
+		float exploitation = sqrt(log(cur->parent->total) / (float) cur->total);
 		float uct = win_rate + c * exploitation;
 
 		return uct; 
@@ -180,11 +180,6 @@ public:
 				leaf->children.push_back(child);
 				child->parent = leaf;
 				child->move = move;
-
-				for(int i = 1 ; i <= 100 ; i++){
-					int result = simulation(child);
-					backpropagate(child, result);
-				}
 			}
 		}
 
@@ -265,23 +260,19 @@ public:
 		return;
 	}
 
-	void mcts(){
-		const int simulation_count = 100;
-
+	void mcts(const int simulation_count){
 		for(int i = 1 ; i <= simulation_count ; i++){
 			node* leaf = select();
 			expand(leaf);
-			
-			if(leaf->children.size() == 0){
+			if(leaf->children.empty()){
 				int result = simulation(leaf);
 				backpropagate(leaf, result);
+				continue;
 			}
 
-			else{
-				node* child = random_child(leaf);
-				int result = simulation(child);
-				backpropagate(child, result);
-			}
+			node* child = random_child(leaf);
+			int result = simulation(child);
+			backpropagate(child, result);
 		}
 
 		return;
@@ -290,7 +281,7 @@ public:
 	virtual action take_action(const board& state) {
 		root = new node;
 		root->state = state;
-		mcts();
+		mcts(100);
 
 		action best_move = action();
 		float best_uct = -1;
@@ -304,13 +295,6 @@ public:
 		}
 
 		return best_move;
-		/*std::shuffle(space.begin(), space.end(), engine);
-		for (const action::place& move : space) {
-			board after = state;
-			if (move.apply(after) == board::legal)
-				return move;
-		}
-		return action();*/
 	}
 
 private:
