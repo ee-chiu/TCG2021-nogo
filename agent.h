@@ -61,11 +61,20 @@ public:
 	random_agent(const std::string& args = "") : agent(args) {
 		if (meta.find("seed") != meta.end())
 			engine.seed(int(meta["seed"]));
+		if (meta.find("c") != meta.end())
+			c = float(meta["c"]);
+		if (meta.find("random") != meta.end())
+			random_player = true;
+		if (meta.find("n") != meta.end())
+			simulation_count = int(meta["n"]);
 	}
 	virtual ~random_agent() {}
 
 protected:
 	std::default_random_engine engine;
+	float c;
+	bool random_player = false;
+	int simulation_count;
 };
 
 /**
@@ -128,7 +137,6 @@ public:
 
 	float UCT(node* cur){
 		float win_rate = (float) cur->win / (float) cur->total;
-		const float c = 0.5;
 		float exploitation = sqrt(log(cur->parent->total) / (float) cur->total);
 		float uct = win_rate + c * exploitation;
 
@@ -260,7 +268,7 @@ public:
 		return;
 	}
 
-	void mcts(const int simulation_count){
+	void mcts(){
 		for(int i = 1 ; i <= simulation_count ; i++){
 			node* leaf = select();
 			expand(leaf);
@@ -279,9 +287,19 @@ public:
 	}
 
 	virtual action take_action(const board& state) {
+		if(random_player){
+			std::shuffle(space.begin(), space.end(), engine);
+			for (const action::place& move : space) {
+				board after = state;
+				if (move.apply(after) == board::legal)
+					return move;
+			}
+			return action();
+		}
+
 		root = new node;
 		root->state = state;
-		mcts(100);
+		mcts();
 
 		action best_move = action();
 		float best_uct = -1;
@@ -303,5 +321,4 @@ private:
 	board::piece_type who_cpy;
 	board::piece_type winner;
 	node* root;
-	node* action_node;
 };
