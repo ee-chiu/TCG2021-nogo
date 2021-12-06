@@ -272,6 +272,7 @@ public:
 		for(int i = 1 ; i <= simulation_count ; i++){
 			node* leaf = select();
 			expand(leaf);
+
 			if(leaf->children.empty()){
 				int result = simulation(leaf);
 				backpropagate(leaf, result);
@@ -283,6 +284,20 @@ public:
 			backpropagate(child, result);
 		}
 
+		return;
+	}
+
+	void delete_tree(){
+		node* cur = root;
+		while(root->children.size() != 0){
+			while(cur->children.size() != 0) cur = cur->children.back();
+			node* tmp = cur->parent;
+			tmp->children.pop_back();
+			delete(cur);
+			cur = tmp;
+		}
+
+		delete(root);
 		return;
 	}
 
@@ -312,6 +327,7 @@ public:
 			}
 		}
 
+		delete_tree();
 		return best_move;
 	}
 
