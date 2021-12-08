@@ -208,36 +208,20 @@ public:
 			if (move.apply(after) == board::legal) legal_count++;
 		}
 
-		if(legal_count == 0) { //我沒有 legal action 了
-			if(who == board::black) winner = board::white;
-			else if(who == board::white) winner = board::black;
+		if(legal_count == 0) { //現在的人沒有 legal action 了
+			if(who == board::black) winner = board::white; //若現在的人是黑色，則白贏
+			else if(who == board::white) winner = board::black; //反之
 			return true;
 		}
 
-		change_player();
-		legal_count = 0;
-
-		for (const action::place& move : space) {
-			board after = cur_state;
-			if (move.apply(after) == board::legal) legal_count++;
-		}
-
-		change_player();
-		if(legal_count == 0) { // 對方沒有 legal action 了
-			if(who == board::black) winner = board::black;
-			else if(who == board::white) winner = board::white;
-			return true;
-		}
-		
 		return false;
 	}
 
-	int simulation(node* child) {
+	int simulation(node* child, bool leaf) {
 		board cur_state = child->state;
+		if(!leaf)	change_player();
 
 		while(!is_terminal(cur_state)){
-			change_player();
-
 			std::shuffle(space.begin(), space.end(), engine);
 			for (const action::place& move : space) {
 				board after = cur_state;
@@ -246,8 +230,10 @@ public:
 					break;
 				}
 			}
+
+			change_player();
 		}
-		
+
 		who = who_cpy;
 		if(winner == who) return 1;
 		else return 0;
@@ -265,6 +251,7 @@ public:
 		root->total++;
 		root->win += result;
 
+		winner = board::piece_type();
 		return;
 	}
 
@@ -274,13 +261,13 @@ public:
 			expand(leaf);
 
 			if(leaf->children.empty()){
-				int result = simulation(leaf);
+				int result = simulation(leaf, true);
 				backpropagate(leaf, result);
 				continue;
 			}
 
 			node* child = random_child(leaf);
-			int result = simulation(child);
+			int result = simulation(child, false);
 			backpropagate(child, result);
 		}
 
