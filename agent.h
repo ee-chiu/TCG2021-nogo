@@ -200,17 +200,21 @@ public:
 		return child;
 	}
 
+	void find_winner(){
+		if(who == board::black) winner = board::white; //若現在的人是黑色，則白贏
+		else if(who == board::white) winner = board::black; //反之
+	}
+
 	bool is_terminal(const board& cur_state) {
 		int legal_count = 0;
 		
 		for (const action::place& move : space) {
 			board after = cur_state;
-			if (move.apply(after) == board::legal) legal_count++;
+			if (move.apply(after, who) == board::legal) legal_count++;
 		}
 
 		if(legal_count == 0) { //現在的人沒有 legal action 了
-			if(who == board::black) winner = board::white; //若現在的人是黑色，則白贏
-			else if(who == board::white) winner = board::black; //反之
+			find_winner();
 			return true;
 		}
 
@@ -219,13 +223,13 @@ public:
 
 	int simulation(node* child, bool leaf) {
 		board cur_state = child->state;
-		if(!leaf)	change_player();
+		change_player();
 
 		while(!is_terminal(cur_state)){
 			std::shuffle(space.begin(), space.end(), engine);
 			for (const action::place& move : space) {
 				board after = cur_state;
-				if (move.apply(after) == board::legal){
+				if (move.apply(after, who) == board::legal){
 					cur_state = after;
 					break;
 				}
