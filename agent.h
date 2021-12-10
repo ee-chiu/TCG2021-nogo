@@ -19,6 +19,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <ctime>
+#include <map>
 
 class agent {
 public:
@@ -110,6 +111,11 @@ private:
 	board::piece_type who;
 };
 
+struct v{
+	int total = 0;
+	int win = 0;
+};
+
 struct node{
 	int total = 0;
 	int win = 0;
@@ -143,6 +149,20 @@ public:
 		return uct; 
 	}
 
+	float UCT_RAVE(node* cur){
+		float win_rate = (float) action2v[cur->move].win / (float) action2v[cur->move].total;
+		float exploitation = -1;
+		if(cur->parent == root) exploitation = sqrt(log(cur->parent->total) / (float) action2v[cur->move].total);
+		else exploitation = sqrt(log(action2v[cur->parent->move].total) / (float) action2v[cur->move].total);
+		float uct = win_rate + c * exploitation;
+
+		return uct; 
+	}
+
+	float get_value(node* cur){
+		return UCT_RAVE(cur);
+	}
+
 	void change_player() {
 		if(who == board::black) who = board::white;
 		else if(who == board::white) who = board::black;
@@ -160,12 +180,12 @@ public:
 			node* best_child = NULL;
 
 			for(node* child : cur->children){
-				if(child->total == 0){
+				if(action2v[child->move].total == 0){
 					best_child = child;
 					break;
 				}
 
-				float uct = UCT(child);
+				float uct = get_value(child);
 				if(uct > best_uct){
 					uct = best_uct;
 					best_child = child;
@@ -247,6 +267,8 @@ public:
 		node* cur = child;
 
 		while(cur != root){
+			action2v[cur->move].total++;
+			action2v[cur->move].win += result;
 			cur->total++;
 			cur->win += result;
 			cur = cur->parent;
@@ -310,7 +332,7 @@ public:
 		action best_move = action();
 		float best_uct = -1;
 		for(node* child : root->children){
-			float uct = UCT(child);
+			float uct = get_value(child);
 
 			if(uct > best_uct){
 				best_uct = uct;
@@ -322,10 +344,22 @@ public:
 		return best_move;
 	}
 
+	virtual void open_episode(const std::string& flag = "") {
+		winner = board::piece_type();
+		root = NULL;
+		action2v.clear();
+		return;
+	}
+
+	virtual void close_episode(const std::string& flag = "") {
+		return;
+	}
+
 private:
 	std::vector<action::place> space;
 	board::piece_type who;
 	board::piece_type who_cpy;
 	board::piece_type winner;
 	node* root;
+	std::map<action, v> action2v;
 };
