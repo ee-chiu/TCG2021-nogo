@@ -152,8 +152,8 @@ public:
 	float UCT_RAVE(node* cur){
 		float win_rate = (float) action2v[cur->move].win / (float) action2v[cur->move].total;
 		float exploitation = -1;
-		if(cur->parent == root) exploitation = sqrt(log(cur->parent->total) / (float) action2v[cur->move].total);
-		else exploitation = sqrt(log(action2v[cur->parent->move].total) / (float) action2v[cur->move].total);
+		if(cur->parent == root) exploitation = sqrt(2 * log(cur->parent->total) / (float) action2v[cur->move].total);
+		else exploitation = sqrt(2 * log(action2v[cur->parent->move].total) / (float) action2v[cur->move].total);
 		float uct = win_rate + c * exploitation;
 
 		return uct; 
