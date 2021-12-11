@@ -72,6 +72,11 @@ public:
 public:
 	board::reward apply(board& b) const { return b.place(position(), color()); }
 	board::reward apply(board& b, board::piece_type who) const { return b.place(position(), who); }
+	board::reward apply_up(board& b, board::piece_type who) const { return b.place_up(position(), who); }
+	board::reward apply_down(board& b, board::piece_type who) const { return b.place_down(position(), who); }
+	board::reward apply_left(board& b, board::piece_type who) const { return b.place_left(position(), who); }
+	board::reward apply_right(board& b, board::piece_type who) const { return b.place_right(position(), who); }
+
 	std::ostream& operator >>(std::ostream& out) const {
 		return out << ';' << "?BW?"[color() & 0b11] << '[' << char('a' + position().x)
 		           << char('a' + ((board::size_y - 1) - position().y)) << ']';

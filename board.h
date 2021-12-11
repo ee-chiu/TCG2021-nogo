@@ -135,6 +135,19 @@ public:
 	reward place(const point& p, unsigned who = piece_type::unknown) {
 		return place(p.x, p.y, who);
 	}
+	reward place_up(const point& p, unsigned who = piece_type::unknown) {
+		return place(p.x - 1, p.y, who);
+	}
+	reward place_down(const point& p, unsigned who = piece_type::unknown) {
+		return place(p.x + 1, p.y, who);
+	}
+	reward place_left(const point& p, unsigned who = piece_type::unknown) {
+		return place(p.x, p.y - 1, who);
+	}
+	reward place_right(const point& p, unsigned who = piece_type::unknown) {
+		return place(p.x, p.y + 1, who);
+	}
+
 
 	/**
 	 * calculate the liberty of the block of piece at [x][y]

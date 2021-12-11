@@ -122,7 +122,7 @@ struct node{
 	node* parent = NULL;
 	std::vector<node*> children;
 	board state;
-	action move;
+	action::place move;
 };
 
 class MCTS_player : public random_agent {
@@ -163,6 +163,21 @@ public:
 		return UCT_RAVE(cur);
 	}
 
+	int count_around_empty(node* child, node* cur){
+		board after_up = cur->state;
+		board after_down = cur->state;
+		board after_left = cur->state;
+		board after_right = cur->state;
+
+		int empty_count = 0;
+		if(child->move.apply_up(after_up, who) == board::legal) empty_count++;
+		if(child->move.apply_down(after_down, who) == board::legal) empty_count++;
+		if(child->move.apply_left(after_left, who) == board::legal) empty_count++;
+		if(child->move.apply_right(after_right, who) == board::legal) empty_count++;
+
+		return empty_count;
+	}
+
 	void change_player() {
 		if(who == board::black) who = board::white;
 		else if(who == board::white) who = board::black;
@@ -185,7 +200,7 @@ public:
 					break;
 				}
 
-				float uct = get_value(child);
+				float uct = get_value(child) + count_around_empty(child, cur) * 0.01;
 				if(uct > best_uct){
 					uct = best_uct;
 					best_child = child;
@@ -332,7 +347,7 @@ public:
 		action best_move = action();
 		float best_uct = -1;
 		for(node* child : root->children){
-			float uct = get_value(child);
+			float uct = get_value(child) + count_around_empty(child, root) * 0.01;
 
 			if(uct > best_uct){
 				best_uct = uct;
