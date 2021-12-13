@@ -152,8 +152,8 @@ public:
 	float UCT_RAVE(node* cur){
 		float win_rate = (float) action2v[cur->move].win / (float) action2v[cur->move].total;
 		float exploitation = -1;
-		if(cur->parent == root) exploitation = sqrt(2 * log(cur->parent->total) / (float) action2v[cur->move].total);
-		else exploitation = sqrt(2 * log(action2v[cur->parent->move].total) / (float) action2v[cur->move].total);
+		if(cur->parent == root) exploitation = sqrt(log(cur->parent->total) / (float) action2v[cur->move].total);
+		else exploitation = sqrt(log(action2v[cur->parent->move].total) / (float) action2v[cur->move].total);
 		float uct = win_rate + c * exploitation;
 
 		return uct; 
@@ -256,7 +256,7 @@ public:
 		return false;
 	}
 
-	int simulation(node* child, bool leaf) {
+	int simulation(node* child) {
 		board cur_state = child->state;
 		change_player();
 
@@ -284,8 +284,6 @@ public:
 		while(cur != root){
 			action2v[cur->move].total++;
 			action2v[cur->move].win += result;
-			cur->total++;
-			cur->win += result;
 			cur = cur->parent;
 		}
 
@@ -302,13 +300,13 @@ public:
 			expand(leaf);
 
 			if(leaf->children.empty()){
-				int result = simulation(leaf, true);
+				int result = simulation(leaf);
 				backpropagate(leaf, result);
 				continue;
 			}
 
 			node* child = random_child(leaf);
-			int result = simulation(child, false);
+			int result = simulation(child);
 			backpropagate(child, result);
 		}
 
@@ -376,5 +374,5 @@ private:
 	board::piece_type who_cpy;
 	board::piece_type winner;
 	node* root;
-	std::map<action, v> action2v;
+	std::map<action::place, v> action2v;
 };
