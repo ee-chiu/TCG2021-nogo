@@ -105,6 +105,7 @@ public:
 		illegal_not_empty = reward(-4),
 		illegal_suicide = reward(-5),
 		illegal_take = reward(-6),
+		illegal_same_color = reward(-7),
 	};
 
 	/**
@@ -120,6 +121,7 @@ public:
 		if (x < p_min.x || x > p_max.x || y < p_min.y || y > p_max.y) return nogo_move_result::illegal_out_of_range;
 		if (board::initial()[x][y] == piece_type::hollow)             return nogo_move_result::illegal_out_of_range;
 		board test = *this;
+		if (test[x][y] == who) return nogo_move_result::illegal_same_color;
 		if (test[x][y] != piece_type::empty) return nogo_move_result::illegal_not_empty;
 		test[x][y] = who; // try put a piece first
 		if (test.check_liberty(x, y, who) == 0) return nogo_move_result::illegal_suicide;
@@ -134,6 +136,9 @@ public:
 	}
 	reward place(const point& p, unsigned who = piece_type::unknown) {
 		return place(p.x, p.y, who);
+	}
+	reward place2(const point& p, int delta_x, int delta_y, unsigned who = piece_type::unknown) {
+		return place(p.x + delta_x, p.y + delta_y, who);
 	}
 	reward place_up(const point& p, unsigned who = piece_type::unknown) {
 		return place(p.x - 1, p.y, who);

@@ -72,6 +72,7 @@ public:
 public:
 	board::reward apply(board& b) const { return b.place(position(), color()); }
 	board::reward apply(board& b, board::piece_type who) const { return b.place(position(), who); }
+	board::reward apply2(board& b, board::piece_type who, int delta_x, int delta_y) const { return b.place2(position(), delta_x, delta_y, who); }
 	board::reward apply_up(board& b, board::piece_type who) const { return b.place_up(position(), who); }
 	board::reward apply_down(board& b, board::piece_type who) const { return b.place_down(position(), who); }
 	board::reward apply_left(board& b, board::piece_type who) const { return b.place_left(position(), who); }
