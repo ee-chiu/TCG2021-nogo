@@ -66,8 +66,6 @@ public:
 			c = float(meta["c"]);
 		if (meta.find("random") != meta.end())
 			random_player = true;
-		if (meta.find("n") != meta.end())
-			simulation_count = int(meta["n"]);
 	}
 	virtual ~random_agent() {}
 
@@ -75,7 +73,6 @@ protected:
 	std::default_random_engine engine;
 	float c;
 	bool random_player = false;
-	int simulation_count;
 };
 
 /**
@@ -295,19 +292,27 @@ public:
 	}
 
 	void mcts(){
-		for(int i = 1 ; i <= simulation_count ; i++){
+		const clock_t limit_time = (use_time[ply]+300-36) * CLOCKS_PER_SEC;
+		const clock_t start_time = clock();
+
+		while(1){
 			node* leaf = select();
 			expand(leaf);
 
 			if(leaf->children.empty()){
 				int result = simulation(leaf);
 				backpropagate(leaf, result);
+				clock_t end_time = clock();
+				if(end_time - start_time >= limit_time) break;
 				continue;
 			}
 
 			node* child = random_child(leaf);
 			int result = simulation(child);
 			backpropagate(child, result);
+
+			clock_t end_time = clock();
+			if(end_time - start_time >= limit_time) break;
 		}
 
 		return;
@@ -341,6 +346,7 @@ public:
 		root = new node;
 		root->state = state;
 		mcts();
+		ply++;
 
 		action best_move = action();
 		float best_uct = -1;
@@ -361,6 +367,7 @@ public:
 		winner = board::piece_type();
 		root = NULL;
 		action2v.clear();
+		ply = 0;
 		return;
 	}
 
@@ -374,5 +381,13 @@ private:
 	board::piece_type who_cpy;
 	board::piece_type winner;
 	node* root;
-	std::map<action::place, v> action2v;
+	std::map<action, v> action2v;
+	int ply;
+	/*std::vector<float> use_time = { 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.75, 1.7, 1.65, 1.6,
+								   1.55, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 0.9, 0.8, 0.7, 
+								   0.6, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.2, 0.2, 0.2, 
+								   0.2, 0.2, 0.2 };*/
+	std::vector<float> use_time = { 0.35, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1, 1.1, 1.2,
+									 1.3, 1.4, 1.5, 1.55, 1.6, 1.65, 1.65, 1.6, 1.55, 1.5, 1.4, 
+									 1.3, 1.2, 1.1, 1, 1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.45, 0.4, 0.35 };
 };
