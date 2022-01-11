@@ -160,7 +160,7 @@ public:
 		return UCT_RAVE(cur);
 	}
 
-	std::vector<int> count_around_empty(node* child, node* cur){
+	std::vector<int> count_around(node* child, node* cur){
 		board after_up = cur->state;
 		board after_down = cur->state;
 		board after_left = cur->state;
@@ -170,27 +170,39 @@ public:
 
 		if(child->move.apply_up(after_up, who) == board::legal) {
 			counts[0]++;
-			if(child->move.apply2(after_up, who, -1, -1) == board::illegal_same_color) counts[1]++;
-			if(child->move.apply2(after_up, who, -1, +1) == board::illegal_same_color) counts[1]++;
-			if(child->move.apply2(after_up, who, -2, 0) == board::illegal_same_color) counts[1]++;
+			board::reward r1 = child->move.apply2(after_up, who, -1, -1);
+			board::reward r2 = child->move.apply2(after_up, who, -1, +1);
+			board::reward r3 = child->move.apply2(after_up, who, -2, 0);
+			if(r1 == board::illegal_same_color || r1 == board::illegal_out_of_range) counts[1]++;
+			if(r2 == board::illegal_same_color || r2 == board::illegal_out_of_range) counts[1]++;
+			if(r3 == board::illegal_same_color || r3 == board::illegal_out_of_range) counts[1]++;
 		}
 		if(child->move.apply_down(after_down, who) == board::legal) {
 			counts[0]++;
-			if(child->move.apply2(after_down, who, +1, -1) == board::illegal_same_color) counts[2]++;
-			if(child->move.apply2(after_down, who, +1, +1) == board::illegal_same_color) counts[2]++;
-			if(child->move.apply2(after_down, who, +2, 0) == board::illegal_same_color) counts[2]++;
+			board::reward r1 = child->move.apply2(after_down, who, +1, -1);
+			board::reward r2 = child->move.apply2(after_down, who, +1, +1);
+			board::reward r3 = child->move.apply2(after_down, who, +2, 0);
+			if(r1 == board::illegal_same_color || r1 == board::illegal_out_of_range) counts[2]++;
+			if(r2 == board::illegal_same_color || r2 == board::illegal_out_of_range) counts[2]++;
+			if(r3 == board::illegal_same_color || r3 == board::illegal_out_of_range) counts[2]++;
 		}
 		if(child->move.apply_left(after_left, who) == board::legal) {
 			counts[0]++;
-			if(child->move.apply2(after_left, who, -1, -1) == board::illegal_same_color) counts[3]++;
-			if(child->move.apply2(after_left, who, +1, -1) == board::illegal_same_color) counts[3]++;
-			if(child->move.apply2(after_left, who, 0, -2) == board::illegal_same_color) counts[3]++;
+			board::reward r1 = child->move.apply2(after_left, who, -1, -1);
+			board::reward r2 = child->move.apply2(after_left, who, +1, -1);
+			board::reward r3 = child->move.apply2(after_left, who, 0, -2);
+			if(r1 == board::illegal_same_color || r1 == board::illegal_out_of_range) counts[3]++;
+			if(r2 == board::illegal_same_color || r2 == board::illegal_out_of_range) counts[3]++;
+			if(r3 == board::illegal_same_color || r3 == board::illegal_out_of_range) counts[3]++;
 		}
 		if(child->move.apply_right(after_right, who) == board::legal) {
 			counts[0]++;
-			if(child->move.apply2(after_right, who, -1, +1) == board::illegal_same_color) counts[4]++;
-			if(child->move.apply2(after_right, who, +1, +1) == board::illegal_same_color) counts[4]++;
-			if(child->move.apply2(after_right, who, 0, +2) == board::illegal_same_color) counts[4]++;
+			board::reward r1 = child->move.apply2(after_right, who, -1, +1);
+			board::reward r2 = child->move.apply2(after_right, who, +1, +1);
+			board::reward r3 = child->move.apply2(after_right, who, 0, +2);
+			if(r1 == board::illegal_same_color || r1 == board::illegal_out_of_range) counts[4]++;
+			if(r2 == board::illegal_same_color || r2 == board::illegal_out_of_range) counts[4]++;
+			if(r3 == board::illegal_same_color || r3 == board::illegal_out_of_range) counts[4]++;
 		}
 
 		return counts;
@@ -218,10 +230,10 @@ public:
 					break;
 				}
 
-				std::vector<int> counts = count_around_empty(child, root);
-				float weights[4] = {0.0, 0.03, 0.07, 0.1};
+				std::vector<int> counts = count_around(child, cur);
+				float weights[4] = {0.0, 12.0, 25.0, 100.0};
 
-				float uct = get_value(child) + counts[0] * 0.01;
+				float uct = get_value(child) + counts[0] * 2.0;
 				for(int i = 1 ; i < 4 ; i++) uct += weights[counts[i]] * counts[i];
 
 				if(uct > best_uct){
@@ -318,7 +330,7 @@ public:
 	}
 
 	void mcts(){
-		const clock_t limit_time = (use_time[ply] + 7) * CLOCKS_PER_SEC;
+		const clock_t limit_time = use_time[ply] * CLOCKS_PER_SEC;
 		const clock_t start_time = clock();
 
 		while(1){
@@ -359,16 +371,6 @@ public:
 	}
 
 	virtual action take_action(const board& state) {
-		if(random_player){
-			std::shuffle(space.begin(), space.end(), engine);
-			for (const action::place& move : space) {
-				board after = state;
-				if (move.apply(after) == board::legal)
-					return move;
-			}
-			return action();
-		}
-
 		root = new node;
 		root->state = state;
 		mcts();
@@ -377,10 +379,10 @@ public:
 		action best_move = action();
 		float best_uct = -1;
 		for(node* child : root->children){
-			std::vector<int> counts = count_around_empty(child, root);
-			float weights[4] = {0.0, 0.03, 0.07, 0.1};
+			std::vector<int> counts = count_around(child, root);
+			float weights[4] = {0.0, 12.0, 25.0, 100.0};
 
-			float uct = get_value(child) + counts[0] * 0.01;
+			float uct = get_value(child) + counts[0] * 2.0;
 			for(int i = 1 ; i < 4 ; i++) uct += weights[counts[i]] * counts[i];
 
 			if(uct > best_uct){
@@ -417,7 +419,7 @@ private:
 								   1.55, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 0.9, 0.8, 0.7, 
 								   0.6, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.2, 0.2, 0.2, 
 								   0.2, 0.2, 0.2 };*/
-	std::vector<float> use_time = { 0.35, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1, 1.1, 1.2,
-									 1.3, 1.4, 1.5, 1.55, 1.6, 1.65, 1.65, 1.6, 1.55, 1.5, 1.4, 
-									 1.3, 1.2, 1.1, 1, 1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.45, 0.4, 0.35 };
+	std::vector<float> use_time = { 7.35, 7.4, 7.45, 7.5, 7.6, 7.7, 7.8, 7.9, 8, 8, 8.1, 8.2,
+									 8.3, 8.4, 8.5, 8.55, 8.6, 8.65, 8.65, 8.6, 8.55, 8.5, 8.4, 
+									 8.3, 8.2, 8.1, 8, 8, 7.9, 7.8, 7.7, 7.6, 7.5, 7.45, 7.4, 7.35 };
 };
